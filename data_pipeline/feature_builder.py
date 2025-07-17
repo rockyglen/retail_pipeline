@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from datetime import datetime
 
 events = pd.read_csv("data_pipeline/processed/cleaned_events.csv")
 
@@ -32,6 +33,10 @@ item_features = pd.DataFrame(
 item_features["item_purchase_rate"] = item_features["item_total_purchases"] / (
     item_features["item_total_views"] + 1
 )
+
+now = datetime.utcnow()
+user_features['event_timestamp']=now
+item_features['event_timestamp']=now
 
 os.makedirs("data_pipeline/processed", exist_ok=True)
 user_features.to_csv("data_pipeline/processed/user_features.csv", index=False)

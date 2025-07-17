@@ -1,0 +1,39 @@
+
+S
+5
+	visitoridUser ID"	visitoridJretail_recommender
+ÃùäÃ€±ı@ÃùäÃ€±ı@
+G
+)
+__dummy"
+__dummy_idJretail_recommender
+ÃùäÃĞºÿ@ÃùäÃĞºÿ@
+M
+/
+itemidItem ID"itemidJretail_recommender
+ÃùäÃĞ´AÃùäÃĞ´A1"$b95f57b1-c55d-48fc-a734-deba52b6dfce*ÃùäÃ˜ùŒA2Ş
+¿
+user_featuresretail_recommender	visitorid"
+total_views"
+total_add_to_cart"
+total_purchases"
+unique_items_viewed2€š: event_timestampZ+)data_pipeline/processed/user_features.csvŠ1feast.infra.offline_stores.file_source.FileSource¢)data_pipeline/processed/user_features.csv@b
+	visitorid
+ÃùäÃ€ŸƒAÃùäÃ€ŸƒA2Ê
+«
+item_featuresretail_recommenderitemid"
+item_total_views"
+item_total_purchases"
+item_purchase_rate2€š: event_timestampZ+)data_pipeline/processed/item_features.csvŠ1feast.infra.offline_stores.file_source.FileSource¢)data_pipeline/processed/item_features.csv@b
+
+itemid
+ÃùäÃ¸ª‡AÃùäÃ¸ª‡ARĞ
+¥
+,feast.infra.online_stores.sqlite.SqliteTable"u
+Q/Users/glenlouis/CodingğŸ’»/retail-recommender/feature_store/data/online_store.db retail_recommender_item_features
+¥
+,feast.infra.online_stores.sqlite.SqliteTable"u
+Q/Users/glenlouis/CodingğŸ’»/retail-recommender/feature_store/data/online_store.db retail_recommender_user_featuresbµevent_timestampZ+)data_pipeline/processed/user_features.csvŠ1feast.infra.offline_stores.file_source.FileSource¢)data_pipeline/processed/user_features.csvªretail_recommenderbµevent_timestampZ+)data_pipeline/processed/item_features.csvŠ1feast.infra.offline_stores.file_source.FileSource¢)data_pipeline/processed/item_features.csvªretail_recommenderŠ2
+
+retail_recommender
+ÃùäÃà’ß<ÃùäÃà’ß<
