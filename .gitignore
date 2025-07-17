@@ -1,2 +1,4 @@
 data_pipeline/raw/
 data_pipeline/processed/
+
+*.DS_Store
