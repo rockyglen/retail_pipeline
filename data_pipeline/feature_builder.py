@@ -42,4 +42,7 @@ os.makedirs("data_pipeline/processed", exist_ok=True)
 user_features.to_csv("data_pipeline/processed/user_features.csv", index=False)
 item_features.to_csv("data_pipeline/processed/item_features.csv", index=False)
 
+user_features.to_parquet("feature_store/feature_repo/data/user_features.parquet", index=False)
+item_features.to_parquet("feature_store/feature_repo/data/item_features.parquet", index=False)
+
 print("Features saved successfully.")

@@ -5,7 +5,7 @@ from datetime import timedelta
 from .entity import user, item
 
 user_source = FileSource(
-    path="data_pipeline/processed/user_features.csv",
+    path="feature_repo/data/user_features.parquet",
     timestamp_field="event_timestamp",
     created_timestamp_column=None,
 )
@@ -26,7 +26,7 @@ user_fv = FeatureView(
 # ITEM FEATURES
 
 item_source = FileSource(
-    path="data_pipeline/processed/item_features.csv",
+    path="feature_repo/data/item_features.parquet",
     timestamp_field="event_timestamp",
     created_timestamp_column=None,
 )
