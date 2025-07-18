@@ -12,3 +12,5 @@ feature_store/data/
 *.json
 
 *.pkl
+
+demo.ipynb
