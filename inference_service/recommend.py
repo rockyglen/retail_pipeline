@@ -1,60 +1,90 @@
-import numpy as np
 import pandas as pd
+import numpy as np
 import pickle
-import json
+import scipy.sparse as sp
 from lightfm import LightFM
-from scipy.sparse import coo_matrix
+from sklearn.feature_extraction import DictVectorizer
+import os
 
-
+# === Load model artifacts ===
 def load_artifacts():
     with open("model/artifacts/lightfm_model.pkl", "rb") as f:
         model = pickle.load(f)
+    with open("model/artifacts/user_encoder.pkl", "rb") as f:
+        user_encoder = pickle.load(f)
+    with open("model/artifacts/item_encoder.pkl", "rb") as f:
+        item_encoder = pickle.load(f)
+    with open("model/artifacts/user_vec.pkl", "rb") as f:
+        user_vec = pickle.load(f)
+    with open("model/artifacts/item_vec.pkl", "rb") as f:
+        item_vec = pickle.load(f)
+    return model, user_encoder, item_encoder, user_vec, item_vec
 
-    with open("model/artifacts/user_id_map.json", "r") as f:
-        user_id_map = json.load(f)
+# === Load side features ===
+def load_features():
+    user_df = pd.read_csv("data_pipeline/processed/user_features.csv")
+    item_df = pd.read_csv("data_pipeline/processed/item_features.csv")
+    return user_df, item_df
 
-    with open("model/artifacts/item_id_map.json", "r") as f:
-        item_id_map = json.load(f)
+# === Load item names ===
+def load_item_names():
+    try:
+        df = pd.read_csv("data_pipeline/raw/item_names.csv")
+        return df.set_index("itemid")["name"].to_dict()
+    except FileNotFoundError:
+        df = pd.read_csv("data_pipeline/raw/item_properties_part.csv")
+        df = df[df["property"] == "name"]
+        df = df.sort_values("timestamp").drop_duplicates("itemid", keep="last")
+        return df.set_index("itemid")["value"].to_dict()
 
-    return model, user_id_map, item_id_map
+# === Recommend items ===
+def recommend_items(visitorid, top_n=5):
+    model, user_encoder, item_encoder, user_vec, item_vec = load_artifacts()
+    user_df, item_df = load_features()
+    item_names = load_item_names()
 
+    try:
+        visitorid_int = int(visitorid)
+        user_idx = user_encoder.transform([visitorid_int])[0]
+    except ValueError:
+        print(f"Visitor ID {visitorid} not found in training data.")
+        return
 
-def build_sparse_matrix(data, user_id_map, item_id_map):
-    row = data["visitorid"].map(user_id_map)
-    col = data["itemid"].map(item_id_map)
-    interactions = coo_matrix(
-        (np.ones(len(data)), (row, col)), shape=(len(user_id_map), len(item_id_map))
+    # === Prepare user features ===
+    user_row = user_df[user_df["visitorid"] == visitorid_int]
+    if user_row.empty:
+        print(f"No user features found for visitor {visitorid}")
+        return
+
+    user_feat_dict = user_row[["total_views", "total_purchases", "unique_items_viewed"]].to_dict("records")[0]
+    user_features = user_vec.transform([user_feat_dict])
+
+    # === Prepare item features ===
+    all_item_ids = item_encoder.classes_
+    item_rows = item_df[item_df["itemid"].isin(all_item_ids.astype(int))].set_index("itemid")
+    item_rows = item_rows.loc[all_item_ids.astype(int)]
+    item_feat_dicts = item_rows[["item_total_views", "item_total_purchases", "item_purchase_rate"]].to_dict("records")
+    item_features = item_vec.transform(item_feat_dicts)
+
+    # === Predict scores ===
+    user_features_tiled = sp.vstack([user_features] * len(all_item_ids))
+    scores = model.predict(
+        user_ids=np.zeros(len(all_item_ids), dtype=int),
+        item_ids=np.arange(len(all_item_ids)),
+        user_features=user_features_tiled,
+        item_features=item_features
     )
-    return interactions
 
+    # === Top-N items ===
+    top_items = np.argsort(-scores)[:top_n]
+    recommended_itemids = item_encoder.inverse_transform(top_items)
 
-def recommend_items(visitorid,top_n=5):
-    model,user_id_map,item_id_map=load_artifacts()
+    print(f"\nTop {top_n} Recommended Items for Visitor {visitorid}:\n")
+    for i, (itemid, score) in enumerate(zip(recommended_itemids, scores[top_items])):
+        item_name = item_names.get(int(itemid), "Unknown Product")
+        print(f"{i+1}. Item ID: {itemid} | Score: {score:.4f} | Name: {item_name}")
 
-    if str(visitorid) not in user_id_map:
-        raise ValueError(f"Visitor ID {visitorid} not found in training data.")
-    
-    df=pd.read_csv("model/joined_features.csv")
-
-    # Build the interaction matrix
-    interaction_matrix = build_sparse_matrix(df, user_id_map, item_id_map)
-
-    # Get internal user index
-    user_index = user_id_map[str(visitorid)]
-
-    # Predict scores for all items
-    scores = model.predict(user_index, np.arange(len(item_id_map)))
-
-    # Rank items by score
-    top_indices = np.argsort(-scores)[:top_n]
-
-    # Map internal item IDs back to original itemids
-    reverse_item_map = {v: k for k, v in item_id_map.items()}
-    recommended_item_ids = [reverse_item_map[i] for i in top_indices]
-
-    return recommended_item_ids
-
+# === Run ===
 if __name__ == "__main__":
-    visitor_id = input("Enter visitorid to get recommendations: ")
-    recommendations = recommend_items(visitor_id, top_n=5)
-    print("Top 5 Recommended itemids:", recommendations)
+    visitor_id = input("Enter visitorid to get recommendations: ").strip()
+    recommend_items(visitor_id, top_n=5)
